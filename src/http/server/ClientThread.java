@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.text.ParseException;
@@ -56,8 +58,22 @@ public class ClientThread extends Thread {
 	protected static void processGetRequest(String request, BufferedReader in, OutputStream out) {
 
 		File file = getRequestTarget(request);
+		String fileExtension = getFileExtension(file);
+		String data;
+		
+		if(!WebServer.RESSOURCES.contains(fileExtension)) { sendResponse(out, null, WebServer.STATUS_NOT_IMPLEMENTED); return; }
 		
 		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
+		
+		if(WebServer.EXECUTABLES.containsKey(fileExtension)) {
+			
+			if((data = runRessource(file, getRequestParameters(request), out)) == null) { return; };
+			
+			sendResponse(out, file, WebServer.STATUS_OK, data);
+			
+			return;
+			
+		}
 		
 		sendResponse(out, file, WebServer.STATUS_OK);
 		
@@ -66,12 +82,26 @@ public class ClientThread extends Thread {
 	protected static void processPostRequest(String request, BufferedReader in, OutputStream out) {
 
 		File file = getRequestTarget(request);
+		String fileExtension = getFileExtension(file);
 		TreeMap<String, String> attributes = getRequestHeader(in);
+		String requestBody = getRequestBody(in, Integer.parseInt(attributes.get(WebServer.HEADER_CONTENT_LENGTH)));
+		String data;
+		
+		if(!WebServer.RESSOURCES.contains(fileExtension)) { sendResponse(out, null, WebServer.STATUS_NOT_IMPLEMENTED); return; }
 		
 		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
-
-		if(getFileExtension(file).equals(WebServer.EXECUTABLE_JAVA)) { sendResponse(out, file, WebServer.STATUS_OK, runJavaRessource(file, getRequestParameters(in, Integer.parseInt(attributes.get(WebServer.HEADER_CONTENT_LENGTH))))); return; }
 		
+		if(WebServer.EXECUTABLES.containsKey(fileExtension)) {
+			
+			if((data = runRessource(file, getRequestParameters(requestBody), out)) == null) { return; };
+			
+			sendResponse(out, file, WebServer.STATUS_OK, data);
+			
+			return;
+			
+		}
+		
+		writeInFile(file, requestBody);
 		sendResponse(out, file, WebServer.STATUS_OK);
 		
 	}
@@ -91,7 +121,7 @@ public class ClientThread extends Thread {
 		
 		String fileName = request.substring(request.indexOf(" ") + 1, request.indexOf("?") != -1 ? request.indexOf("?") : request.indexOf(" ", request.indexOf(" ") + 1));
 
-		if(!getFileExtension(fileName).equals(WebServer.EXECUTABLE_JAVA)) { fileName = WebServer.SERVER_PUBLIC_ROOT + fileName + (fileName.equals("/") ? WebServer.SERVER_DEFAULT_PAGE : ""); }
+		if(!WebServer.EXECUTABLES.containsKey(getFileExtension(fileName))) { fileName = WebServer.SERVER_PUBLIC_ROOT + fileName + (fileName.equals("/") ? WebServer.SERVER_DEFAULT_PAGE : ""); }
 		else { fileName = WebServer.SERVER_SRC_ROOT + fileName; }
 	
 		return new File(fileName);
@@ -101,24 +131,7 @@ public class ClientThread extends Thread {
 	protected static TreeMap<String, String> getRequestParameters(String request) {
 		
 		TreeMap<String, String> parameters = new TreeMap<>();
-		String stringParameters = request.indexOf("?") != -1 ? request.substring(request.indexOf("?") + 1, request.indexOf(" ", request.indexOf("?"))) : null;
-		String[] param;
-		
-		if(stringParameters == null) { return null; }
-		
-		for(String parameter : stringParameters.split("&")) {
-			param = parameter.split("=");
-			parameters.put(param[0], param[1]);
-		}
-		
-		return parameters;
-		
-	}
-	
-	protected static TreeMap<String, String> getRequestParameters(BufferedReader in, int contentLength) {
-		
-		TreeMap<String, String> parameters = new TreeMap<>();
-		String stringParameters = getRequestBody(in, contentLength);
+		String stringParameters = request.indexOf("?") != -1 ? request.substring(request.indexOf("?") + 1, request.indexOf(" ", request.indexOf("?"))) : request.indexOf("=") != -1 ? request : null;
 		String[] param;
 		
 		if(stringParameters == null) { return null; }
@@ -175,9 +188,7 @@ public class ClientThread extends Thread {
 		
 	}
 	
-	protected static boolean cleanFile(File file) { return writeInFile(file, ""); }
-	
-	protected static boolean writeInFile(File file, String data) {
+	protected static boolean cleanFile(File file) {
 		
 		BufferedWriter writer;
 		
@@ -185,7 +196,27 @@ public class ClientThread extends Thread {
 			
 			writer = new BufferedWriter(new FileWriter(file));
 			
-			writer.write(data);
+			writer.write("");
+			writer.flush();
+			
+			writer.close();
+			
+		} catch(IOException e) { System.err.println("Could not write in the file."); return false; }
+		
+		return true;
+		
+	}
+	
+	protected static boolean writeInFile(File file, String data) {
+		
+		BufferedWriter writer;
+		
+		try {
+			
+			writer = new BufferedWriter(new FileWriter(file, true));
+			
+			writer.append(data);
+			writer.newLine();
 			writer.flush();
 			
 			writer.close();
@@ -216,19 +247,33 @@ public class ClientThread extends Thread {
 		
 	}
 	
-	protected static String runJavaRessource(File file, TreeMap<String, String> parameters) {
-
-		String cmd = "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + getJavaPackageName(file);
+	protected static String runRessource(File file, TreeMap<String, String> parameters, OutputStream out) {
+		
+		Method getRessourceMethod;
+		String cmd;
 		String stream = null;
+		
+		try { getRessourceMethod = ClientThread.class.getDeclaredMethod(WebServer.EXECUTABLES.get(getFileExtension(file)), File.class); }
+		catch(NoSuchMethodException e) { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return null; }
+		catch(SecurityException e) { sendResponse(out, null, WebServer.STATUS_UNAUTHORIZED); return null; }
+		
+		try { cmd = (String)getRessourceMethod.invoke(null, file); }
+		catch(IllegalAccessException e) { sendResponse(out, null, WebServer.STATUS_UNAUTHORIZED); return null; }
+		catch(IllegalArgumentException e) { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return null; }
+		catch(InvocationTargetException e) { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return null; }
 
 		for(Map.Entry<String, String> parameter : parameters.entrySet()) { cmd += " " + parameter.getKey() + " " + parameter.getValue(); }
 
 		try { stream = readStream(Runtime.getRuntime().exec(cmd).getInputStream()); }
-		catch(IOException e) { System.err.println("Could not execute the commande."); }
+		catch(IOException e) { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return null; }
 		
-		return stream;	
+		return stream;
 		
 	}
+	
+	protected static String getJavaRessourceCommand(File file) { return "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + getJavaPackageName(file); }
+	
+	protected static String getJavasciptRessourceCommand(File file) { return "cmd.exe /c node " + file.getAbsolutePath().replace(WebServer.SERVER_SRC_ROOT, WebServer.SERVER_BIN_ROOT); }
 	
 	protected static String getFileExtension(String path) { return path.substring(path.lastIndexOf(".")); }
 	
@@ -307,11 +352,11 @@ public class ClientThread extends Thread {
 				case "HEAD": processHeadRequest(line, in, out); break;
 				case "PUT": processPutRequest(line, in, out); break;
 				case "DELETE": processDeleteRequest(line, in, out); break;
-				default: System.out.println("Could not read request " + line); break;
+				default: sendResponse(out, null, WebServer.STATUS_METHOD_NOT_ALLOWED); break;
 				
 			}
 			
-		} catch(IOException e) { System.err.println("Internal Server Error"); }
+		} catch(IOException e) { System.err.println("Internal Server Error."); }
 		
 	}
 
