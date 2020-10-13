@@ -41,6 +41,10 @@ public class WebServer {
 	public final static int STATUS_METHOD_NOT_ALLOWED = 405;
 	public final static int STATUS_INTERNAL_SERVER = 500;
 	public final static int STATUS_NOT_IMPLEMENTED = 501;
+	
+	/**
+	 * The set of the different server status.
+	 */
 	public final static TreeMap<Integer, String> STATUS = new TreeMap<>() {{
 		put(STATUS_OK, "OK");
 		put(STATUS_CREATED, "CREATED");
@@ -79,7 +83,8 @@ public class WebServer {
 	}};
 	
 	/**
-	 * WebServer constructor.
+	 * The we server constructor.
+	 * @param port The port that the web server will be launched on.
 	 */
 	protected static void start(int port) {
 		
@@ -103,8 +108,7 @@ public class WebServer {
 	}
 
 	/**
-	 * Start the application.
-	 * 
+	 * Starts the application.
 	 * @param args
 	 */
 	public static void main(String args[]) {
