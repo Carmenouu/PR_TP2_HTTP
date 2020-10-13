@@ -46,7 +46,7 @@ public class ClientThread extends Thread {
 		
 		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
 		
-		sendResponse(out, file, WebServer.STATUS_OK, (Object)null);
+		sendResponse(out, file, WebServer.STATUS_NO_CONTENT, (Object)null);
 		
 	}
 	
@@ -72,7 +72,7 @@ public class ClientThread extends Thread {
 		if(!writeInFile(file, getRequestBody(in, Integer.parseInt(attributes.get(WebServer.HEADER_CONTENT_LENGTH)))))
 		{ sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return; }
 
-		sendResponse(out, file, statusCode, (Object)null);
+		sendResponse(out, file, statusCode);
 
 	}
 	
@@ -121,7 +121,7 @@ public class ClientThread extends Thread {
 		String data;
 		
 		if(!WebServer.RESSOURCES.contains(fileExtension)) { sendResponse(out, null, WebServer.STATUS_NOT_IMPLEMENTED); return; }
-		
+
 		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
 		
 		if(WebServer.EXECUTABLES.containsKey(fileExtension)) {
@@ -152,7 +152,7 @@ public class ClientThread extends Thread {
 		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
 		if(!file.delete()) { sendResponse(out, null, WebServer.STATUS_UNAUTHORIZED); return; }
 		
-		sendResponse(out, null, WebServer.STATUS_OK);
+		sendResponse(out, null, WebServer.STATUS_NO_CONTENT);
 		
 	}
 	
@@ -164,10 +164,14 @@ public class ClientThread extends Thread {
 	protected static File getRequestTarget(String request) {
 		
 		String fileName = request.substring(request.indexOf(" ") + 1, request.indexOf("?") != -1 ? request.indexOf("?") : request.indexOf(" ", request.indexOf(" ") + 1));
-
-		if(!WebServer.EXECUTABLES.containsKey(getFileExtension(fileName))) { fileName = WebServer.SERVER_PUBLIC_ROOT + fileName + (fileName.equals("/") ? WebServer.SERVER_DEFAULT_PAGE : ""); }
+		
+		fileName = fileName.equals("/") ? "/" + WebServer.SERVER_DEFAULT_PAGE : fileName;
+			
+		if(!WebServer.EXECUTABLES.containsKey(getFileExtension(fileName))) { fileName = WebServer.SERVER_PUBLIC_ROOT + fileName; }
 		else { fileName = WebServer.SERVER_SRC_ROOT + fileName; }
+		
 		return new File(fileName);
+		
 	}
 	
 	/**
@@ -232,7 +236,7 @@ public class ClientThread extends Thread {
 		
 		try{ in.read(requestBody, 0, contentLength); }
 		catch(Exception e) { System.err.println("Failed to read the request's body."); }
-		
+
 		return new String(requestBody);
 		
 	}
@@ -336,11 +340,11 @@ public class ClientThread extends Thread {
 		Method getRessourceMethod;
 		String cmd;
 		String stream = null;
-		
+
 		try { getRessourceMethod = ClientThread.class.getDeclaredMethod(WebServer.EXECUTABLES.get(getFileExtension(file)), File.class); }
 		catch(NoSuchMethodException e) { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return null; }
 		catch(SecurityException e) { sendResponse(out, null, WebServer.STATUS_UNAUTHORIZED); return null; }
-		
+
 		try { cmd = (String)getRessourceMethod.invoke(null, file); }
 		catch(IllegalAccessException e) { sendResponse(out, null, WebServer.STATUS_UNAUTHORIZED); return null; }
 		catch(IllegalArgumentException e) { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return null; }
@@ -382,7 +386,7 @@ public class ClientThread extends Thread {
 		
 		String filePath = file.getAbsolutePath();
 
-		return filePath.substring(0, filePath.lastIndexOf(".")).substring(System.getProperty("user.dir").length() + WebServer.SERVER_BIN_ROOT.length() + 2).replace("\\", ".");
+		return filePath.substring(0, filePath.lastIndexOf(".")).substring(System.getProperty("user.dir").length() + WebServer.SERVER_SRC_ROOT.length() + 2).replace("\\", ".");
 		
 	}
 	
@@ -418,20 +422,28 @@ public class ClientThread extends Thread {
 		
 		outPrint.println(WebServer.HEADER_DATE + WebServer.HEADER_DELIMITER + " " + formatter.format(new Date(System.currentTimeMillis())));
 		outPrint.println(WebServer.HEADER_SERVER + WebServer.HEADER_DELIMITER + " " + WebServer.SERVER_NAME);
-		
+
 		outPrint.println("");
 		outPrint.flush();
 		
-		if(file != null && (optionalArgs.length == 0 || optionalArgs[0] == null)) {
+		if(file != null && optionalArgs.length == 0) {
+			
 			try {
 				Files.copy(file.toPath(), out);
 				out.flush();
 			} catch(IOException e) { System.err.println("Couldn't send the response's body."); }
+			
+			return;
+			
 		}
 		
 		if(optionalArgs.length != 0 && optionalArgs[0] != null) {
+			
 			outPrint.println(optionalArgs[0]);
 			outPrint.flush();
+			
+			return;
+			
 		}
 		
 	}
