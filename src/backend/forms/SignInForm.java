@@ -2,6 +2,10 @@ package backend.forms;
 
 import java.util.TreeMap;
 
+/**
+ * @author Nel Bouvier et Carmen Prévot
+ * @version 1.0
+ */
 public class SignInForm {
 	
 	private final static int ARGUMENTS_NUMBER = 2;
@@ -11,6 +15,12 @@ public class SignInForm {
 		put("lastName", String.class);
 	}};
 	
+	
+	/**
+	 * Checks the data, in order to have only two arguments (as defined in the fields).
+	 * @param args The data, contained in the request.
+	 * @return The parameters.
+	 */
 	private static TreeMap<String, Object> dataValidation(String... args) {
 		
 		TreeMap<String, Object> params = new TreeMap<>();
@@ -23,12 +33,21 @@ public class SignInForm {
 		
 	}
 	
+	
+	/**
+	 * Processes the data, prints a short string using the parameters.
+	 * @param params The parameters, given by the request (see dataValidation).
+	 */
 	private static void dataProcessing(TreeMap<String, Object> params) {
 		
 		System.out.println("Salut " + params.get("firstName") + " " + params.get("lastName"));
 		
 	}
 
+	/**
+	 * The main method of this SignInForm.
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		
 		TreeMap<String, Object> params;

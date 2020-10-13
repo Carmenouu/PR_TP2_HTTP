@@ -3,8 +3,16 @@ package http.client;
 import java.net.InetAddress;
 import java.net.Socket;
 
+/**
+ * @author Nel Bouvier et Carmen Prévot
+ * @version 1.0
+ */
 public class WebPing {
 	
+	/**
+	 * The main method, which send a ping to the web server.
+	 * @param args
+	 */
 	public static void main(String[] args) {
 	  
 		if(args.length != 2) {

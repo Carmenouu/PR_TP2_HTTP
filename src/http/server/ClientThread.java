@@ -18,12 +18,26 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * @author Nel Bouvier et Carmen Prévot
+ * @version 1.0
+ */
 public class ClientThread extends Thread {
 	
 	private Socket socket;
 	
+	/**
+	 * Creates a new instance of ClientThread.
+	 * @param socket The client socket.
+	 */
 	ClientThread(Socket socket) { this.socket = socket; }
 	
+	/**
+	 * Processes the HEAD request.
+	 * @param request The request to process.
+	 * @param in The input.
+	 * @param out The output.
+	 */
 	protected static void processHeadRequest(String request, BufferedReader in, OutputStream out) {
 		
 		File file = getRequestTarget(request);
@@ -34,6 +48,13 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	
+	/**
+	 * Processes the PUT request.
+	 * @param request The request to process.
+	 * @param in The input.
+	 * @param out The output.
+	 */
 	protected static void processPutRequest(String request, BufferedReader in, OutputStream out) {
 		
 		int statusCode = WebServer.STATUS_OK;
@@ -53,6 +74,12 @@ public class ClientThread extends Thread {
 
 	}
 	
+	/**
+	 * Processes the GET request.
+	 * @param request The request to process.
+	 * @param in The input.
+	 * @param out The output.
+	 */
 	protected static void processGetRequest(String request, BufferedReader in, OutputStream out) {
 
 		File file = getRequestTarget(request);
@@ -63,6 +90,12 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Processes the POST request.
+	 * @param request The request to process.
+	 * @param in The input.
+	 * @param out The output.
+	 */
 	protected static void processPostRequest(String request, BufferedReader in, OutputStream out) {
 
 		TreeMap<String, Object> fileProperties = getRequestTargetPost(request);
@@ -74,6 +107,12 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Processes the DELETE request.
+	 * @param request The request to process.
+	 * @param in The input.
+	 * @param out The output.
+	 */
 	protected static void processDeleteRequest(String request, BufferedReader in, OutputStream out) {
 		
 		File file = getRequestTarget(request);
@@ -85,6 +124,11 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Get the file targeted by the request.
+	 * @param request The request to process.
+	 * @return The targeted file.
+	 */
 	protected static File getRequestTarget(String request) {
 		
 		String fileName = request.substring(request.indexOf(" ") + 1, request.indexOf("?") != -1 ? request.indexOf("?") : request.indexOf(" ", request.indexOf(" ") + 1));
@@ -93,6 +137,11 @@ public class ClientThread extends Thread {
 
 	}
 	
+	/**
+	 * Get the file targeted by the POST request.
+	 * @param request
+	 * @return The file properties.
+	 */
 	protected static TreeMap<String, Object> getRequestTargetPost(String request) {
 		
 		TreeMap<String, Object> fileProperties = new TreeMap<>();
@@ -106,6 +155,11 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Get the parameters listed in the request.
+	 * @param request
+	 * @return The parameters.
+	 */
 	protected static TreeMap<String, String> getRequestParameters(String request) {
 		
 		TreeMap<String, String> parameters = new TreeMap<>();
@@ -123,6 +177,11 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Get the header of the request.
+	 * @param in The input.
+	 * @return The header.
+	 */
 	protected static TreeMap<String, String> getRequestHeader(BufferedReader in) {
 
 		String line = null;
@@ -146,6 +205,12 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Get the body of the request.
+	 * @param in The input.
+	 * @param contentLength The length of the request body.
+	 * @return The body of the request, as a String.
+	 */
 	protected static String getRequestBody(BufferedReader in, int contentLength) {
 		
 		char[] requestBody = new char[contentLength];
@@ -157,6 +222,11 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Creates a new file.
+	 * @param file The file to create.
+	 * @return The outcome of the creation ; if the file has been created, it is true, otherwise it is false.
+	 */
 	protected static boolean createFile(File file) {
 		
 		try { file.createNewFile(); }
@@ -166,8 +236,18 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Cleans the file, removes all its content.
+	 * @param file The file to clean.
+	 * @return The outcome.
+	 */
 	protected static boolean cleanFile(File file) { return writeInFile(file, ""); }
 	
+	/**
+	 * Cleans the file, removes all its content.
+	 * @param file The file to clean.
+	 * @return The outcome.
+	 */
 	protected static boolean writeInFile(File file, String data) {
 		
 		BufferedWriter writer;
@@ -187,6 +267,11 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Reads the input stream content.
+	 * @param stream The input stream.
+	 * @return The content of the input stream.
+	 */
 	protected static String readStream(InputStream stream) {
 		
 		String line;
@@ -207,6 +292,12 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Runs the java file described in the request.
+	 * @param fileProperties The properties of the java file to execute.
+	 * @param parameters The parameters for the execution.
+	 * @return The output stream.
+	 */
 	protected static String runJavaRessource(TreeMap<String, Object> fileProperties, TreeMap<String, String> parameters) {
 
 		String cmd = "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + fileProperties.get("classPackage");
@@ -221,6 +312,13 @@ public class ClientThread extends Thread {
 		
 	}
 	
+	/**
+	 * Sends the response to the request to the server.
+	 * @param out The output.
+	 * @param file The file created before.
+	 * @param statusCode The status of the web server.
+	 * @param optionalArgs Optional arguments to send to the server.
+	 */
 	protected static void sendResponse(OutputStream out, File file, int statusCode, Object... optionalArgs) {
 		
 		PrintWriter outPrint = new PrintWriter(out);
