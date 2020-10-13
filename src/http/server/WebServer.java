@@ -45,6 +45,8 @@ public class WebServer {
 		put(STATUS_INTERNAL_SERVER, "INTERNAL SERVER ERROR");
 	}};
 	
+	public final static String EXECUTABLE_JAVA = ".java";
+	
 	/**
 	 * WebServer constructor.
 	 */
