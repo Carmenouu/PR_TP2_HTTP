@@ -98,12 +98,14 @@ public class ClientThread extends Thread {
 	 */
 	protected static void processPostRequest(String request, BufferedReader in, OutputStream out) {
 
-		TreeMap<String, Object> fileProperties = getRequestTargetPost(request);
-		File file = (File)fileProperties.get("file");
-
-		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
+		File file = getRequestTarget(request);
+		TreeMap<String, String> attributes = getRequestHeader(in);
 		
-		sendResponse(out, file, WebServer.STATUS_OK, runJavaRessource(fileProperties, getRequestParameters(request)));
+		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
+
+		if(getFileExtension(file).equals(WebServer.EXECUTABLE_JAVA)) { sendResponse(out, file, WebServer.STATUS_OK, runJavaRessource(file, getRequestParameters(in, Integer.parseInt(attributes.get(WebServer.HEADER_CONTENT_LENGTH))))); return; }
+		
+		sendResponse(out, file, WebServer.STATUS_OK);
 		
 	}
 	
@@ -132,27 +134,10 @@ public class ClientThread extends Thread {
 	protected static File getRequestTarget(String request) {
 		
 		String fileName = request.substring(request.indexOf(" ") + 1, request.indexOf("?") != -1 ? request.indexOf("?") : request.indexOf(" ", request.indexOf(" ") + 1));
-		
-		return new File(WebServer.SERVER_PUBLIC_ROOT + fileName + (fileName.equals("/") ? WebServer.SERVER_DEFAULT_PAGE : ""));
 
-	}
-	
-	/**
-	 * Get the file targeted by the POST request.
-	 * @param request
-	 * @return The file properties.
-	 */
-	protected static TreeMap<String, Object> getRequestTargetPost(String request) {
-		
-		TreeMap<String, Object> fileProperties = new TreeMap<>();
-		String fileName = request.substring(request.indexOf(" ") + 1, request.indexOf("?") != -1 ? request.indexOf("?") : request.indexOf(" ", request.indexOf(" ") + 1));
-		fileProperties.put("file", new File(WebServer.SERVER_SRC_ROOT + "/" + fileName));
-		fileProperties.put("classPackage", fileName.substring(1, fileName.lastIndexOf(".")).replace("/", "."));
-		
-		if(!fileName.substring(fileName.lastIndexOf(".")).equals(".java")) { return null; }
-
-		return fileProperties;
-		
+		if(!getFileExtension(fileName).equals(WebServer.EXECUTABLE_JAVA)) { fileName = WebServer.SERVER_PUBLIC_ROOT + fileName + (fileName.equals("/") ? WebServer.SERVER_DEFAULT_PAGE : ""); }
+		else { fileName = WebServer.SERVER_SRC_ROOT + fileName; }
+		return new File(fileName);
 	}
 	
 	/**
@@ -164,6 +149,29 @@ public class ClientThread extends Thread {
 		
 		TreeMap<String, String> parameters = new TreeMap<>();
 		String stringParameters = request.indexOf("?") != -1 ? request.substring(request.indexOf("?") + 1, request.indexOf(" ", request.indexOf("?"))) : null;
+		String[] param;
+		
+		if(stringParameters == null) { return null; }
+		
+		for(String parameter : stringParameters.split("&")) {
+			param = parameter.split("=");
+			parameters.put(param[0], param[1]);
+		}
+		
+		return parameters;
+		
+	}
+	
+	/**
+	 * Get the parameters listed in the request.
+	 * @param in The input.
+	 * @param contentLength The length of the content (of the request).
+	 * @return The parameters.
+	 */
+	protected static TreeMap<String, String> getRequestParameters(BufferedReader in, int contentLength) {
+		
+		TreeMap<String, String> parameters = new TreeMap<>();
+		String stringParameters = getRequestBody(in, contentLength);
 		String[] param;
 		
 		if(stringParameters == null) { return null; }
@@ -294,13 +302,13 @@ public class ClientThread extends Thread {
 	
 	/**
 	 * Runs the java file described in the request.
-	 * @param fileProperties The properties of the java file to execute.
+	 * @param file The java file to execute.
 	 * @param parameters The parameters for the execution.
 	 * @return The output stream.
 	 */
-	protected static String runJavaRessource(TreeMap<String, Object> fileProperties, TreeMap<String, String> parameters) {
+	protected static String runJavaRessource(File file, TreeMap<String, String> parameters) {
 
-		String cmd = "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + fileProperties.get("classPackage");
+		String cmd = "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + getJavaPackageName(file);
 		String stream = null;
 
 		for(Map.Entry<String, String> parameter : parameters.entrySet()) { cmd += " " + parameter.getKey() + " " + parameter.getValue(); }
@@ -309,6 +317,33 @@ public class ClientThread extends Thread {
 		catch(IOException e) { System.err.println("Could not execute the commande."); }
 		
 		return stream;	
+		
+	}
+	
+	/**
+	 * Gets the extension of the file, using the path.
+	 * @param path Path of the file.
+	 * @return The extension of the file, as a string.
+	 */
+	protected static String getFileExtension(String path) { return path.substring(path.lastIndexOf(".")); }
+	
+	/**
+	 * Gets the extension of the file, using the file as an object.
+	 * @param file The file.
+	 * @return The extension of the file, as a string.
+	 */
+	protected static String getFileExtension(File file) { return getFileExtension(file.getAbsolutePath()); }
+	
+	/**
+	 * Gets the package name of the file.
+	 * @param file The file.
+	 * @return The package name.
+	 */
+	protected static String getJavaPackageName(File file) {
+		
+		String filePath = file.getAbsolutePath();
+
+		return filePath.substring(0, filePath.lastIndexOf(".")).substring(System.getProperty("user.dir").length() + WebServer.SERVER_BIN_ROOT.length() + 2).replace("\\", ".");
 		
 	}
 	

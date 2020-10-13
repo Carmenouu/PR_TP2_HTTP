@@ -49,6 +49,8 @@ public class WebServer {
 		put(STATUS_INTERNAL_SERVER, "INTERNAL SERVER ERROR");
 	}};
 	
+	public final static String EXECUTABLE_JAVA = ".java";
+	
 	/**
 	 * The we server constructor.
 	 * @param port The port that the web server will be launched on.
