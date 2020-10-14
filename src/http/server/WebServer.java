@@ -57,6 +57,9 @@ public class WebServer {
 		put(STATUS_NOT_IMPLEMENTED, "NOT IMPLEMENTED");
 	}};
 	
+	/**
+	 * The set of the different resources.
+	 */
 	public final static String RESSOURCE_HTML = ".html";
 	public final static String RESSOURCE_CSS = ".css";
 	public final static String RESSOURCE_JS = ".js";
@@ -111,7 +114,7 @@ public class WebServer {
 
 	/**
 	 * Starts the application.
-	 * @param args
+	*  @param args The port number of the server.
 	 */
 	public static void main(String args[]) {
 		

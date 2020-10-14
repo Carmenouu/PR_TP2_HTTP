@@ -11,7 +11,7 @@ public class WebPing {
 	
 	/**
 	 * The main method, which send a ping to the web server.
-	 * @param args
+	*  @param args The name of the server to connect to, and the port number of the server.
 	 */
 	public static void main(String[] args) {
 	  

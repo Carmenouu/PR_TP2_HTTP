@@ -184,7 +184,7 @@ public class ClientThread extends Thread {
 	
 	/**
 	 * Get the parameters listed in the request.
-	 * @param request
+	 * @param request The request.
 	 * @return The parameters.
 	 */
 	protected static TreeMap<String, String> getRequestParameters(String request) {
@@ -273,8 +273,9 @@ public class ClientThread extends Thread {
 	protected static boolean writeInFile(File file, String data) { return writeInFile(file, data, true); }
 	
 	/**
-	 * Cleans the file, removes all its content.
-	 * @param file The file to clean.
+	 * Add some data in a file.
+	 * @param file The file to update.
+	 * @param data The data to write in the file.
 	 * @return The outcome.
 	 */
 	protected static boolean writeInFile(File file, String data, boolean append) {
@@ -325,10 +326,11 @@ public class ClientThread extends Thread {
 	}
 	
 	/**
-	 * Runs the java file described in the request.
-	 * @param file The java file to execute.
+	 * Runs the file described in the request.
+	 * @param file The file to execute.
 	 * @param parameters The parameters for the execution.
-	 * @return The output stream.
+	 * @param out The output stream.
+	 * @return The new stream
 	 */
 	protected static String runRessource(File file, TreeMap<String, String> parameters, OutputStream out) {
 		
@@ -354,8 +356,18 @@ public class ClientThread extends Thread {
 		
 	}
 
+	/**
+	 * Get the command to execute, from the given file.
+	 * @param file The targeted java file.
+	 * @return The command.
+	 */
 	protected static String getJavaRessourceCommand(File file) { return "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + getJavaPackageName(file); }
 	
+	/**
+	 * Get the command using a specified file.
+	 * @param file The Javascript file.
+	 * @return The command as a string.
+	 */
 	protected static String getJavasciptRessourceCommand(File file) { return "cmd.exe /c node " + file.getAbsolutePath().replace(WebServer.SERVER_SRC_ROOT, WebServer.SERVER_BIN_ROOT); }
 	
 	/**

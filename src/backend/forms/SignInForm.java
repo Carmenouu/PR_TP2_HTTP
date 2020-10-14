@@ -46,7 +46,7 @@ public class SignInForm {
 
 	/**
 	 * The main method of this SignInForm.
-	 * @param args
+	 * @param args The data of the form.
 	 */
 	public static void main(String[] args) {
 		
