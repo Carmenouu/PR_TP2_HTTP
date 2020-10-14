@@ -1,1 +1,0 @@
-memberSearchIndex = [{"p":"http.client","c":"WebPing","l":"main(String[])","url":"main(java.lang.String[])"},{"p":"http.client","c":"WebPing","l":"WebPing()","url":"%3Cinit%3E()"}]
