@@ -133,7 +133,7 @@ public class ClientThread extends Thread {
 			return;
 			
 		}
-		
+
 		writeInFile(file, requestBody);
 		sendResponse(out, file, WebServer.STATUS_OK);
 		
@@ -260,40 +260,27 @@ public class ClientThread extends Thread {
 	 * @param file The file to clean.
 	 * @return The outcome.
 	 */
-	protected static boolean cleanFile(File file) {
-		
-		BufferedWriter writer;
-		
-		try {
-			
-			writer = new BufferedWriter(new FileWriter(file));
-			
-			writer.write("");
-			writer.flush();
-			
-			writer.close();
-			
-		} catch(IOException e) { System.err.println("Could not write in the file."); return false; }
-		
-		return true;
-		
-	}	
+	protected static boolean cleanFile(File file) { return writeInFile(file, null, false); }	
+	
+	protected static boolean writeInFile(File file, String data) { return writeInFile(file, data, true); }
 	
 	/**
 	 * Cleans the file, removes all its content.
 	 * @param file The file to clean.
 	 * @return The outcome.
 	 */
-	protected static boolean writeInFile(File file, String data) {
+	protected static boolean writeInFile(File file, String data, boolean append) {
 		
 		BufferedWriter writer;
 		
 		try {
 			
-			writer = new BufferedWriter(new FileWriter(file, true));
-			
+			writer = new BufferedWriter(new FileWriter(file, append));
+
+			if(data != null && data.equals("")) { writer.close(); return true; }
+				
 			writer.append(data);
-			writer.newLine();
+			if(append) { writer.newLine(); }
 			writer.flush();
 			
 			writer.close();
