@@ -276,6 +276,7 @@ public class ClientThread extends Thread {
 	 * Add some data in a file.
 	 * @param file The file to update.
 	 * @param data The data to write in the file.
+	 * @param append To known if the file have to be overwritten or not.
 	 * @return The outcome.
 	 */
 	protected static boolean writeInFile(File file, String data, boolean append) {
