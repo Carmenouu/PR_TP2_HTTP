@@ -114,7 +114,7 @@ public class WebServer {
 
 	/**
 	 * Starts the application.
-	 * @param args The port should be specified.
+	*  @param args The port number of the server.
 	 */
 	public static void main(String args[]) {
 		
