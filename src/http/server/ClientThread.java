@@ -359,8 +359,18 @@ public class ClientThread extends Thread {
 		
 	}
 
+	/**
+	 * Get the command to execute, from the given file.
+	 * @param file The targeted java file.
+	 * @return The command.
+	 */
 	protected static String getJavaRessourceCommand(File file) { return "cmd.exe /c java -cp " + WebServer.SERVER_BIN_ROOT + "; " + getJavaPackageName(file); }
 	
+	/**
+	 * Get the command using a specified file.
+	 * @param file The Javascript file.
+	 * @return The command as a string.
+	 */
 	protected static String getJavasciptRessourceCommand(File file) { return "cmd.exe /c node " + file.getAbsolutePath().replace(WebServer.SERVER_SRC_ROOT, WebServer.SERVER_BIN_ROOT); }
 	
 	/**
