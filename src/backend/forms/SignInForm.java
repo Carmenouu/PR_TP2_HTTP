@@ -11,8 +11,8 @@ public class SignInForm {
 	private final static int ARGUMENTS_NUMBER = 2;
 	
 	private final static TreeMap<String, Class<?>> PARAMETERS_PROPERTIES = new TreeMap<>() {{
-		put("firstName", String.class);
-		put("lastName", String.class);
+		put("signInFirstName", String.class);
+		put("signInLastName", String.class);
 	}};
 	
 	
@@ -40,7 +40,7 @@ public class SignInForm {
 	 */
 	private static void dataProcessing(TreeMap<String, Object> params) {
 		
-		System.out.println("Salut " + params.get("firstName") + " " + params.get("lastName"));
+		System.out.println("Salut " + params.get("signInFirstName") + " " + params.get("signInLastName"));
 		
 	}
 
