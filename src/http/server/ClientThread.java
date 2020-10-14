@@ -119,10 +119,18 @@ public class ClientThread extends Thread {
 		TreeMap<String, String> attributes = getRequestHeader(in);
 		String requestBody = getRequestBody(in, Integer.parseInt(attributes.get(WebServer.HEADER_CONTENT_LENGTH)));
 		String data;
+		int statusCode = WebServer.STATUS_OK;
 		
 		if(!WebServer.RESSOURCES.contains(fileExtension)) { sendResponse(out, null, WebServer.STATUS_NOT_IMPLEMENTED); return; }
 
-		if(!file.exists()) { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
+		if(!file.exists()) {
+			
+			if(!WebServer.EXECUTABLES.containsKey(fileExtension)) {
+				if(createFile(file)) { statusCode = WebServer.STATUS_CREATED; }
+				else { sendResponse(out, null, WebServer.STATUS_INTERNAL_SERVER); return; }
+			} else { sendResponse(out, null, WebServer.STATUS_NOT_FOUND); return; }
+			
+		}
 		
 		if(WebServer.EXECUTABLES.containsKey(fileExtension)) {
 			
@@ -135,7 +143,7 @@ public class ClientThread extends Thread {
 		}
 
 		writeInFile(file, requestBody);
-		sendResponse(out, file, WebServer.STATUS_OK);
+		sendResponse(out, file, statusCode);
 		
 	}
 	
@@ -279,7 +287,7 @@ public class ClientThread extends Thread {
 
 			if(data != null && data.equals("")) { writer.close(); return true; }
 				
-			writer.append(data);
+			writer.append(data != null ? data : "");
 			if(append) { writer.newLine(); }
 			writer.flush();
 			
